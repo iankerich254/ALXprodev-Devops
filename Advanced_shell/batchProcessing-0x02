@@ -1,21 +1,35 @@
 #!/bin/bash
 
-# List of Pokémon (must match exactly for the checker)
+# List of Pokémon required by checker
 pokemon_list=("bulbasaur" "ivysaur" "venusaur" "charmander" "charmeleon")
 
-# Loop through the list
+# Loop through Pokémon list
 for pokemon in "${pokemon_list[@]}"; do
   echo "Fetching data for $pokemon..."
 
-  # Fetch and save data
-  curl -s -f "https://pokeapi.co/api/v2/pokemon/$pokemon" -o "${pokemon}.json"
+  success=false
+  attempts=0
 
-  if [ $? -eq 0 ]; then
-    echo "Saved data to ${pokemon}.json ✅"
-  else
-    echo "Failed to fetch data for $pokemon ❌" >> errors.txt
+  # Retry loop (up to 3 attempts)
+  while [ "$success" = false ] && [ $attempts -lt 3 ]; do
+    ((attempts++))
+
+    curl -s -f "https://pokeapi.co/api/v2/pokemon/$pokemon" -o "${pokemon}.json"
+
+    if [ $? -eq 0 ]; then
+      echo "Saved data to ${pokemon}.json ✅"
+      success=true
+    else
+      echo "Attempt $attempts for $pokemon failed..."
+      sleep 1
+    fi
+  done
+
+  # If all attempts failed
+  if [ "$success" = false ]; then
+    echo "Failed to fetch data for $pokemon after 3 attempts ❌" >> errors.txt
   fi
 
-  # Delay to avoid rate limits
+  # Delay to avoid rate-limiting
   sleep 1
 done
