@@ -1,0 +1,12 @@
+#!/bin/bash
+
+jq -r '
+  "\(.name) \(.height) \(.weight) \(.types[0].type.name)"
+' data.json |
+awk '{
+  name = toupper(substr($1,1,1)) substr($1,2)
+  height = $2 / 10
+  weight = $3 / 10
+  type = toupper(substr($4,1,1)) substr($4,2)
+  printf "%s is of type %s, weighs %.0fkg, and is %.1fm tall.\n", name, type, weight, height
+}'
