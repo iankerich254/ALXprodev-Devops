@@ -3,6 +3,9 @@
 # List of Pokémon (required for checker)
 pokemon_list=("bulbasaur" "ivysaur" "venusaur" "charmander" "charmeleon")
 
+# Track background PIDs
+pids=()
+
 # Function to fetch data for a single Pokémon with retry logic
 fetch_pokemon() {
   local pokemon=$1
@@ -30,12 +33,21 @@ fetch_pokemon() {
   fi
 }
 
-# Loop through each Pokémon and run fetch in background
+# Launch all fetch jobs in parallel and track their PIDs
 for pokemon in "${pokemon_list[@]}"; do
   fetch_pokemon "$pokemon" &
+  pids+=($!)
 done
 
-# Wait for all background processes to finish
-wait
+# Show active jobs
+jobs
+
+# Wait for all background processes
+for pid in "${pids[@]}"; do
+  wait "$pid"
+done
+
+# kill any remaining background processes
+kill $(jobs -pr) 2>/dev/null
 
 echo "All fetch operations completed."
