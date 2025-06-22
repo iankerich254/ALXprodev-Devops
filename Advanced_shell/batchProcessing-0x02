@@ -1,0 +1,23 @@
+#!/bin/bash
+
+# Fetch the total number of Pokémon
+total=$(curl -s "https://pokeapi.co/api/v2/pokemon?limit=1" | jq '.count')
+
+# Fetch all Pokémon names and loop through them
+curl -s "https://pokeapi.co/api/v2/pokemon?limit=$total" |
+jq -r '.results[].name' |
+while read -r pokemon; do
+  echo "Fetching data for $pokemon..."
+
+  # Save JSON file in current directory
+  curl -s -f "https://pokeapi.co/api/v2/pokemon/$pokemon" -o "${pokemon}.json"
+
+  if [ $? -eq 0 ]; then
+    echo "Saved data to ${pokemon}.json ✅"
+  else
+    echo "Failed to fetch data for $pokemon ❌" >> errors.txt
+  fi
+
+  # Delay to respect API rate limits
+  sleep 1
+done
