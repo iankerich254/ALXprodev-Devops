@@ -1,12 +1,9 @@
 #!/bin/bash
 
-jq -r '
-  "\(.name) \(.height) \(.weight) \(.types[0].type.name)"
-' data.json |
-awk '{
-  name = toupper(substr($1,1,1)) substr($1,2)
-  height = $2 / 10
-  weight = $3 / 10
-  type = toupper(substr($4,1,1)) substr($4,2)
-  printf "%s is of type %s, weighs %.0fkg, and is %.1fm tall.\n", name, type, weight, height
-}'
+jq -r '.name, .height, .weight, .types[0].type.name' data.json |
+awk 'NR==1{name=$0} NR==2{height=$0} NR==3{weight=$0} NR==4{type=$0} END {
+  printf "%s %s %s %s\n", name, height, weight, type
+}' |
+sed -E 's/(.*) (.*) (.*) (.*)/\u\1 is of type \u\4, weighs \3kg, and is \2m tall./' |
+sed -E 's/([0-9]+)kg/echo "\1 / 10" | bc -l | awk '\''{printf "%.0fkg", $1}'\''/e' |
+sed -E 's/([0-9.]+)m/echo "\1 / 10" | bc -l | awk '\''{printf "%.1fm", $1}'\''/e'
