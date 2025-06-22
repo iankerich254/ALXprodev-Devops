@@ -1,0 +1,41 @@
+#!/bin/bash
+
+# List of Pokémon (required for checker)
+pokemon_list=("bulbasaur" "ivysaur" "venusaur" "charmander" "charmeleon")
+
+# Function to fetch data for a single Pokémon with retry logic
+fetch_pokemon() {
+  local pokemon=$1
+  local attempts=0
+  local success=false
+
+  echo "Fetching data for $pokemon..."
+
+  while [ $attempts -lt 3 ]; do
+    ((attempts++))
+    curl -s -f "https://pokeapi.co/api/v2/pokemon/$pokemon" -o "${pokemon}.json"
+    
+    if [ $? -eq 0 ]; then
+      echo "Saved data to ${pokemon}.json ✅"
+      success=true
+      break
+    else
+      echo "Attempt $attempts for $pokemon failed..."
+      sleep 1
+    fi
+  done
+
+  if [ "$success" = false ]; then
+    echo "Failed to fetch data for $pokemon after 3 attempts ❌" >> errors.txt
+  fi
+}
+
+# Loop through each Pokémon and run fetch in background
+for pokemon in "${pokemon_list[@]}"; do
+  fetch_pokemon "$pokemon" &
+done
+
+# Wait for all background processes to finish
+wait
+
+echo "All fetch operations completed."
