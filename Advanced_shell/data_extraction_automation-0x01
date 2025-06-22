@@ -1,9 +1,16 @@
 #!/bin/bash
 
-jq -r '.name, .height, .weight, .types[0].type.name' data.json |
-awk 'NR==1{name=$0} NR==2{height=$0} NR==3{weight=$0} NR==4{type=$0} END {
-  printf "%s %s %s %s\n", name, height, weight, type
-}' |
-sed -E 's/(.*) (.*) (.*) (.*)/\u\1 is of type \u\4, weighs \3kg, and is \2m tall./' |
-sed -E 's/([0-9]+)kg/echo "\1 / 10" | bc -l | awk '\''{printf "%.0fkg", $1}'\''/e' |
-sed -E 's/([0-9.]+)m/echo "\1 / 10" | bc -l | awk '\''{printf "%.1fm", $1}'\''/e'
+# Extract values using jq
+data=$(jq -r '.name, .types[0].type.name, .weight, .height' data.json)
+
+# Parse values using awk
+echo "$data" | awk 'NR==1{name=$0} NR==2{type=$0} NR==3{weight=$0} NR==4{height=$0} END {
+  printf "%s %s %.0f %.1f\n", name, type, weight/10, height/10
+}' | \
+# Use sed to format the sentence
+sed -E 's/(.*) (.*) ([0-9]+) ([0-9.]+)/\
+name=\1\n\
+type=\2\n\
+formatted_weight=\3\n\
+formatted_height=\4\n\
+echo "$name is of type $type, weighs ${formatted_weight}kg, and is ${formatted_height}m tall."/e'
